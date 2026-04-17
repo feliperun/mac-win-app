@@ -40,9 +40,11 @@ jobs:
       - name: Install AutoHotkey v2
         shell: pwsh
         run: |
-          $url = "https://www.autohotkey.com/download/ahk-v2.zip"
+          $tag = "v2.0.23"
+          $url = "https://github.com/AutoHotkey/AutoHotkey/releases/download/$tag/AutoHotkey_2.0.23.zip"
           $zip = "$env:RUNNER_TEMP\ahk.zip"
           $dst = "$env:RUNNER_TEMP\ahk"
+          Write-Host "Downloading $url"
           Invoke-WebRequest -Uri $url -OutFile $zip -UseBasicParsing
           Expand-Archive -Path $zip -DestinationPath $dst -Force
           $exe = Get-ChildItem -Recurse -Path $dst -Filter "AutoHotkey64.exe" | Select-Object -First 1
