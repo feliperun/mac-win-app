@@ -40,18 +40,21 @@ jobs:
       - name: Install AutoHotkey v2
         shell: pwsh
         run: |
-          winget install --id AutoHotkey.AutoHotkey `
-            --accept-source-agreements `
-            --accept-package-agreements `
-            --silent `
-            --scope user
+          $url = "https://www.autohotkey.com/download/ahk-v2.zip"
+          $zip = "$env:RUNNER_TEMP\ahk.zip"
+          $dst = "$env:RUNNER_TEMP\ahk"
+          Invoke-WebRequest -Uri $url -OutFile $zip -UseBasicParsing
+          Expand-Archive -Path $zip -DestinationPath $dst -Force
+          $exe = Get-ChildItem -Recurse -Path $dst -Filter "AutoHotkey64.exe" | Select-Object -First 1
+          if (-not $exe) { throw "AutoHotkey64.exe not found in zip" }
+          "AHK_EXE=$($exe.FullName)" | Out-File -Append -FilePath $env:GITHUB_ENV -Encoding utf8
+          Write-Host "AHK: $($exe.FullName)"
       - name: Validate .ahk files
         shell: pwsh
         run: |
-          $ahk = Get-ChildItem -Recurse -Path "$env:LOCALAPPDATA\Programs\AutoHotkey" -Filter "AutoHotkey64.exe" | Select-Object -First 1
-          if (-not $ahk) { throw "AutoHotkey not found after install" }
           Get-ChildItem -Recurse -Filter *.ahk | ForEach-Object {
             Write-Host "Validating $($_.FullName)"
-            & $ahk.FullName /validate $_.FullName
+            & $env:AHK_EXE /validate $_.FullName
             if ($LASTEXITCODE -ne 0) { throw "AHK validation failed on $($_.FullName)" }
+            Write-Host "  OK"
           }
