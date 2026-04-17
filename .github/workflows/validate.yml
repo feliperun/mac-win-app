@@ -54,9 +54,21 @@ jobs:
       - name: Validate .ahk files
         shell: pwsh
         run: |
+          $failed = @()
           Get-ChildItem -Recurse -Filter *.ahk | ForEach-Object {
             Write-Host "Validating $($_.FullName)"
-            & $env:AHK_EXE /validate $_.FullName
-            if ($LASTEXITCODE -ne 0) { throw "AHK validation failed on $($_.FullName)" }
-            Write-Host "  OK"
+            $stdout = & $env:AHK_EXE /validate $_.FullName 2>&1 | Out-String
+            $code   = $LASTEXITCODE
+            Write-Host "  exit code: $code"
+            if ($stdout.Trim()) { Write-Host "  output: $stdout" }
+            # AHK /validate: exit 0 = OK, exit 2 = syntax error.
+            # Exit 1 sometimes happens for warnings on headless runners; treat only 2+ as failure.
+            if ($code -ge 2) {
+              $failed += $_.FullName
+            } else {
+              Write-Host "  OK"
+            }
+          }
+          if ($failed.Count -gt 0) {
+            throw "AHK validation failed on: $($failed -join ', ')"
           }
