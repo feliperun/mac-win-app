@@ -150,6 +150,12 @@ if ($SkipAutostart) {
     Write-Step 5 "Autostart"
     $startup  = [Environment]::GetFolderPath('Startup')
     $linkPath = Join-Path $startup "mac-win-app.lnk"
+    $legacy   = Join-Path $startup "mac-shortcuts.lnk"
+
+    if (Test-Path $legacy) {
+        Remove-Item $legacy -Force
+        Write-Info "Removed legacy autostart: $legacy"
+    }
 
     $sh  = New-Object -ComObject WScript.Shell
     $lnk = $sh.CreateShortcut($linkPath)
